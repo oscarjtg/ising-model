@@ -2,93 +2,110 @@
 """
 Created on Thu Jan 14 11:01:28 2021
 
-@author: OscarTG
+@author: Oscar Tovey Garcia
+
+Ising model on a 10x10 grid using the Metropolis algorithm.
 """
-
-# Ising model on a 10x10 grid using the Metropolis algorithm yay!
-
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-# declaring parameters
-N = 10 # grid size
-T = 100 # temperature in Kelvin
+
+# Declaring global variables.
+N = 10 # Grid size.
+T = 100 # Temperature in Kelvin.
 kB = 1.381e-23 # Boltzmann constant in m^2 kg s^-2 K^-1
 #kB = 1
-beta = 1/(kB * T) # thermodynamic beta
-e = 1.602e-19 # electronic charge
+beta = 1 / (kB * T) # Thermodynamic beta.
+e = 1.602e-19 # Electronic charge.
 #e = 1
-J = 0.01*e # coupling constant in J aka kg m^2 s^-2
-Nit = 100000 # number of iterations
-oft = 500 # how often to calculate H
-HN = int(Nit/oft)
-error = 'y' # plot error bars y/n
+J = 0.01 * e # Coupling constant in Joules (kg m^2 s^-2).
+Nit = 100000 # Number of iterations.
+oft = 5000 # How often to calculate H.
+HN = int(Nit / oft)
+error = True # Plot error bars True/False.
 
-# function to generate an NxN grid of 1s and (-1)s
-# representing spin up and spin down respecitvely
+
 def grid_generator(N):
-    grid = np.zeros((N,N))
+    """
+    Function to generate an NxN grid of 1s and (-1)s
+    representing spin up and spin down respectively.
+    """
+    grid = np.zeros((N, N))
     #print(grid)
 
-    a = np.random.uniform(size=N**2) #generate random numbers, uniform distribution in [0,1]
-    #print(a) #uncomment to print the random numbers
-    c = 0
+    # Generate random numbers, uniform distribution in [0,1].
+    random_numbers = np.random.uniform(size=N**2) 
+    #print(random_numbers) # Uncomment to print the random numbers.
+    count = 0
 
-    # this for loop randomly allocates +1 or -1 to a grid entry
+    # This for loop randomly allocates +1 or -1 to a grid entry
     for i in range(N):
         for j in range(N):
-            if a[i+j] > 0.5: #compare random number to 0.5 to decide if array element should be +1 or -1
-                grid[i,j] = 1
-                c += 1
+            if random_numbers[i + j] > 0.5:
+                grid[i, j] = 1
+                count += 1
             else:
-                grid[i,j] = -1
-                c -= 1
+                grid[i, j] = -1
+                count -= 1
 
     # print(grid)
-    # print('sum of elements in grid is ', c) 
-    # c tells us the sum of all the elements in the grid, so we can quickly see if there are more 1s or -1s
-
+    # print('sum of elements in grid is ', c)
     return grid
 
 
-# function to calculate interaction of nearest neighbours to spin (i,j) in grid
-# with periodic boundary conditions (so e.g. element (0,0) couple to (1,0), (9,0), (0,1) and (0,9)
-def nearest_neighbour_interaction(grid,i,j,J=1):
-    Hij = grid[(i-1)%10,j%10] + grid[(i-1)%10,j] + grid[(i+1)%10,j] + grid[i,(j-1)%10] + grid[i,(j+1)%10]
-    return -J*grid[i,j]*Hij
+def nearest_neighbour_interaction(grid, i, j, N, J=1):
+    """
+    Function to calculate interaction of nearest neighbours to spin (i, j) in 
+    grid with periodic boundary conditions (so e.g. if grid is 10x10, 
+    element (0, 0) couples to (1, 0), (9, 0), (0, 1) and (0, 9)).
+    """
+    grid_point = grid[i, j]
+    #print(int((i-1)%N))
+    #print(i)
+    # Nearest neighbours:
+    nn1 = grid[int((i - 1) % N), j]
+    nn2 = grid[int((i + 1) % N), j]
+    nn3 = grid[i, int((j - 1) % N)]
+    nn4 = grid[i, int((j + 1) % N)]
+    nearest_neighbour_sum = nn1 + nn2 + nn3 + nn4
+
+    return -J * grid_point * nearest_neighbour_sum
 
 
-# function to calculate the Hamiltonian with coupling constant J 
 def full_interaction_energy(grid, N=10, J=1):
-    H_sum = 0 #initialise our Hamiltonian sum
+    """
+    Calculates the Hamiltonian with coupling constant J.
+    """
+    H_sum = 0 # Initialise Hamiltonian sum.
     
-    # sum all the nearest neighbour interaction energies
+    # Sum all the nearest neighbour interaction energies.
     for i in range(N):
         for j in range(N):
-            H_sum += nearest_neighbour_interaction(grid,i,j,J)
+            H_sum += nearest_neighbour_interaction(grid, i, j, N, J)
             
-    H = 0.5*H_sum # factor of 0.5 to remove double counting
+    H = 0.5 * H_sum # Factor of 0.5 to remove double counting.
     return H
 
-def Metropolis_iteration(grid,i,j,J,B,ur):
+
+def Metropolis_iteration(grid, i, j, J, B, ur):
     #print('before', grid[i,j])
-    Ei = nearest_neighbour_interaction(grid,i,j,J)
+    Ei = nearest_neighbour_interaction(grid, i, j, N, J)
     #print('Ei = ', Ei)
-    grid[i,j] = -1.0*grid[i,j]
-    #print('after', grid[i,j])
-    Ef = nearest_neighbour_interaction(grid,i,j,J)
+    grid[i, j] = -1.0 * grid[i, j]
+    #print('after', grid[i, j])
+    Ef = nearest_neighbour_interaction(grid, i, j, N, J)
     #print('Ef = ', Ef)
     dE = Ef - Ei
     #print('dE = ', dE)
-    if dE < 0: # flipping spin leads to reduction in energy, i.e. is favourable
+    if dE < 0: # Flipping spin leads to reduction in energy, i.e. is favourable
         #print('dE<0, remain flipped')
         gridf = grid
-        #print(gridf[i,j])
-        #print('final',gridf[i,j])
+        #print(gridf[i, j])
+        #print('final', gridf[i, j])
     else:
         #ur = np.random.uniform(1)
-        B_factor = np.exp(-B*dE)
+        B_factor = np.exp(-B * dE)
         #print('beta =',B)
         #print('B-factor=',B_factor)
         #print('random number is',ur)
@@ -97,36 +114,24 @@ def Metropolis_iteration(grid,i,j,J,B,ur):
             gridf = grid
             #print('final',gridf[i,j])
         else:
-            #print('dE>0, flip back')
-            grid[i,j] = -1.0*grid[i,j]
+            #print('dE > 0, flip back')
+            grid[i, j] = -1.0*grid[i, j]
             gridf = grid
-            #print('final',gridf[i,j])
+            #print('final', gridf[i, j])
 
     #print('------')
     return gridf
 
 
-tic = time.process_time()
-#grid1 = grid_generator(N)
-#toc = time.process_time()
-#print(grid1)
-#toc2 = time.process_time()
-#print('grid_generator time is ', (toc-tic)*1000, 'ms')
-#print('grid_generator time + printing is ', (toc2-tic)*1000, 'ms')
-
-
-#H = np.linspace(0,0,HN+1)
-#H[0] = full_interaction_energy(grid1,N,J)
-#print(H)
-#progplot = 'n'
-
-def Metropolis(grid1,N,Nit,J,beta,progplot,HN,error):
-    u_rand1 = np.random.randint(0,N,size=Nit)
-    u_rand2 = np.random.randint(0,N,size=Nit)
+def Metropolis(grid1, N, Nit, J, beta, progplot, HN, error):
+    u_rand1 = np.random.randint(0, N, size=Nit)
+    u_rand2 = np.random.randint(0, N, size=Nit)
     u_rand3 = np.random.uniform(size=Nit)
     n_last = 1000;
 
-    if error == 'y':
+    if error is True:
+        # Initialise array storing the last magnetisation values
+        # for subsequent calculation of standard deviation.
         if Nit > n_last:
             #H_last = np.zeros(n_last)
             M_last = np.zeros(n_last)
@@ -138,33 +143,34 @@ def Metropolis(grid1,N,Nit,J,beta,progplot,HN,error):
     #print(u_rand2)
     #print(u_rand3)
 
-    k=0
-    l=0
-    m=0
+    k = 0
+    l = 0
+    m = 0
     
-    if progplot == 'y':
-        H = np.linspace(HN+1)
+    if progplot is True:
+        H = np.linspace(HN + 1)
     
     for k in range(Nit):
-        grid1 = Metropolis_iteration(grid1,u_rand1[k],u_rand2[k],J,beta,u_rand3[k])
-        if k % (Nit/HN) == 0 and progplot == 'y':
-            H[l+1] = full_interaction_energy(grid1,N,J)
+        grid1 = Metropolis_iteration(grid1, u_rand1[k], u_rand2[k], J, 
+                                     beta, u_rand3[k])
+        if k % (Nit / HN) == 0 and progplot is True:
+            H[l + 1] = full_interaction_energy(grid1, N, J)
             l += 1
         # store the last 200 values to calculate mean and standard dev (for errorbar plot)
-        if error == 'y' and (Nit-k) <= n_last:
+        if error is True and (Nit-k) <= n_last:
             #H_last[m] = full_interaction_energy(grid1,N,J)
             M_last[m] = np.sum(grid1)
             m += 1
         k += 1
 
-    if progplot == 'y':
+    if progplot is True:
         print('final grid', grid1)
 
         plt.figure(20)
         t = np.linspace(0,20,HN+1)
         plt.plot(t,H)
 
-    if error == 'y':
+    if error is True:
         #Mag = np.mean(H_last)
         #Mag_dev = np.std(H_last)
         Mag = np.mean(M_last)
@@ -177,76 +183,56 @@ def Metropolis(grid1,N,Nit,J,beta,progplot,HN,error):
     return Mag, Mag_dev
 
 
-#Metropolis(grid1,N,Nit,J,beta,'y',HN)   
+def calculate_magnetisation(temperatures, J):
+    number_temperatures = len(temperatures)
+    magnetisation = np.linspace(0, 0, number_temperatures)
+    magnetisation_error = np.linspace(0, 0, number_temperatures)
+    for temperature in temperatures:
+        grid = grid_generator(N)
+        beta = 1/(kB * temperature)
+        n = np.where(temperatures == temperature)
+        magnetisation[n], magnetisation_error[n] = Metropolis(grid, N, Nit, J, beta, False, HN, error)
 
-"""
-a = np.array([10,30])
-b = np.arange(60,200,20)
-c = np.arange(220,800,20)
-d = np.arange(650,1000,50)
-e = np.arange(1100,1500,100)
-
-#1D array imbedding
-
-T = np.zeros(a.size + b.size + c.size + d.size + e.size)
-T[:a.size] = a
-T[a.size:(a.size+b.size)] = b
-T[a.size+b.size:(a.size+b.size+c.size)] = c
-T[a.size+b.size+c.size:(a.size+b.size+c.size+d.size)] = d
-T[a.size+b.size+c.size+d.size:] = e
-"""
-
-T = np.arange(100,1000,100)
-#T = [100,200,300,400,500]
+    return magnetisation, magnetisation_error
 
 
-#T = [0.001, 0.01, 0.1, 1, 10, 30, 60, 80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 5000, 8000, 10000, 20000, 50000, 1.0e5]
-#T = np.linspace(100,1000,100)
-print(T)
-M1 = np.linspace(0,0,len(T))
-M_dev1 = np.linspace(0,0,len(T))
-p=0
-for p in range(len(T)):
-    gridp = grid_generator(N)
-    beta = 1/(kB * T[p]) 
-    M1[p], M_dev1[p] = Metropolis(gridp,N,Nit,J,beta,'n',HN,error)
-    p += 1
 
+if __name__ == "__main__":
+    temperatures = np.arange(100, 900, 50)
+    #temperatures = [0.001, 0.01, 0.1, 1, 10, 30, 60, 80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 5000, 8000, 10000, 20000, 50000, 1.0e5]
+    number_temperatures = len(temperatures)
+    print(f"temperatures = {temperatures}")
+    print(f"number of temperatures = {number_temperatures}")
 
-fig, ax = plt.subplots()
-ax.errorbar(T,M1,M_dev1,0,'bs',ms=4,label='J = 10 meV')
+    J1 = J
+    tic1 = time.process_time()
+    magnetisation_1, magnetisation_1_error = calculate_magnetisation(temperatures, J1)
+    toc1 = time.process_time()
+    print(f'Calculation 1 time is {toc1 - tic1} s')
 
-toc3 = time.process_time()
-print('Calculation 1 time is ', (toc3-tic), 's')
-tic4 = time.process_time()
+    J2 = 2 * J
+    tic2 = time.process_time()
+    magnetisation_2, magnetisation_2_error = calculate_magnetisation(temperatures, J2)
+    toc2 = time.process_time()
+    print(f'Calculation 2 time is {toc2 - tic2} s')
 
-# 2nd run
-M2 = np.linspace(0,0,len(T))
-M_dev2 = np.linspace(0,0,len(T))
-p=0
-for p in range(len(T)):
-    gridp = grid_generator(N)
-    beta = 1/(kB * T[p]) 
-    M2[p], M_dev2[p] = Metropolis(gridp,N,Nit,J*2,beta,'n',HN,error)
-    p += 1
+    fig, ax = plt.subplots()
+    ax.errorbar(temperatures, np.abs(magnetisation_1), magnetisation_1_error, 0, 
+        'bs', ms=4, label=f'J = {J1} meV')
+    ax.errorbar(temperatures, np.abs(magnetisation_2), magnetisation_2_error, 0, 
+        'mo', ms=4, label=f'J = {J2} meV')
 
-toc4 = time.process_time()
-print('Calculation 2 time is ', (toc3-tic), 's')
+    plt.xlabel('Temperature / K')
+    plt.ylabel('|Magnetisation| / au')
+    plt.title('Ising Model')
+    ax.legend(loc='upper right')
 
-ax.errorbar(T,M2,M_dev2,0,'mo',ms=4,label='J = 20 meV')
+    plt.savefig('Ising_model5.png')
+    plt.savefig('Ising_model5.pdf')
 
-plt.xlabel('Temperature / K')
-plt.ylabel('Magnetisation / au')
-plt.title('Ising Model')
-ax.legend(loc='upper right')
-
-plt.savefig('Ising_model5.png')
-plt.savefig('Ising_model5.pdf')
-
-toc5 = time.process_time()
-print('Total runtime is', (toc5-tic), 's')
-
-plt.show()
+    toc5 = time.process_time()
+    print(f'Total runtime is {toc5 - tic1} s.')
+    plt.show()
 
 
 
