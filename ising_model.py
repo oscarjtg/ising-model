@@ -24,16 +24,16 @@ def read_inputs(filename):
         file_text = f.read()
     file_lines = file_text.split('\n')
     for line in file_lines:
-        if debug: print(line)
-        if line.startswith('#') or line.startswith('\n'):
-            if debug: print(f"skipped line {line}")
+        if debug2: print(line)
+        if line.startswith('#') or line == '':
+            if debug2: print(f"skipped line {line}")
             continue
 
         pair = line.split()
         if debug: print(pair)
         if len(pair) < 2:
             if pair == []:
-                if debug: print("expect empty list: {pair}")
+                if debug2: print("expect empty list: {pair}")
                 continue
             raise ValueError(f"read_input: too few values in line - {pair}")
         elif len(pair) > 2:
@@ -59,11 +59,11 @@ def read_inputs(filename):
                 input_parameters[key] = multiply_by_e(value, input_parameters)
             elif ':' in value:
                 start, end, interval = [float(x) for x in value.split(':')]
-                if debug: print(start, end, interval)
+                if debug2: print(start, end, interval)
                 input_parameters[key] = np.arange(start, end, interval)
 
     if debug:
-        print(input_parameters)
+        print('input_parameters', input_parameters)
     return input_parameters
 
 
@@ -107,7 +107,7 @@ def grid_generator(N):
                 count -= 1
 
     if debug2: print(grid)
-    if debug2: print('sum of elements in grid is ', c)
+    if debug2: print('sum of elements in grid is ', count)
     return grid
 
 
@@ -256,17 +256,20 @@ def calculate_magnetisation(temperatures, J):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        filename = sys.argv[2]
+    tic_full = time.process_time()
+    if debug2: print(sys.argv)
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        if debug: print('Used command line input')
     else:
         filename = 'inputs.txt'
+    if debug: print(filename)
 
     params = read_inputs(filename)
 
     N = int(params['N'])
-    T = params['T']
+    temperatures = params['T']
     kB = params['kB']
-    beta = 1 / (kB * T) # Thermodynamic beta.
     e = params['e']
     J = params['J']
     Nit = int(params['Nit'])
@@ -274,8 +277,6 @@ if __name__ == "__main__":
     HN = int(Nit / oft)
     error = params['error']
     
-    temperatures = np.arange(100, 900, 50)
-    #temperatures = [0.001, 0.01, 0.1, 1, 10, 30, 60, 80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 5000, 8000, 10000, 20000, 50000, 1.0e5]
     number_temperatures = len(temperatures)
 
     if debug:
@@ -308,7 +309,7 @@ if __name__ == "__main__":
     plt.savefig('Ising_model5.png')
     plt.savefig('Ising_model5.pdf')
 
-    toc5 = time.process_time()
-    if debug: print(f'Total runtime is {toc5 - tic1} s.')
+    toc_full = time.process_time()
+    if debug: print(f'Total runtime is {toc_full - tic_full} s.')
 
     plt.show()

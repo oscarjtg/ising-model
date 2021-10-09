@@ -19,10 +19,10 @@ e		1.602e-19
 J 		0.01{e}
 
 # Number of iterations.
-Nit		30000
+Nit		20000
 
 # How often to calculate Hamiltonian (total energy).
-oft 	5000
+oft 	1000
 
 # Plot error bars True/False.
 error	True
