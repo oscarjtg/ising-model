@@ -6,24 +6,70 @@ Created on Thu Jan 14 11:01:28 2021
 
 Ising model on a 10x10 grid using the Metropolis algorithm.
 """
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+debug = True
 
-# Declaring global variables.
-N = 10 # Grid size.
-T = 100 # Temperature in Kelvin.
-kB = 1.381e-23 # Boltzmann constant in m^2 kg s^-2 K^-1
-#kB = 1
-beta = 1 / (kB * T) # Thermodynamic beta.
-e = 1.602e-19 # Electronic charge.
-#e = 1
-J = 0.01 * e # Coupling constant in Joules (kg m^2 s^-2).
-Nit = 100000 # Number of iterations.
-oft = 5000 # How often to calculate H.
-HN = int(Nit / oft)
-error = True # Plot error bars True/False.
+
+def read_inputs(filename):
+    """Reads the input file and creates a dict with appropriate entries."""
+    input_parameters = {}
+    with open(filename, 'r') as f:
+        file_text = f.read()
+    file_lines = file_text.split('\n')
+    for line in file_lines:
+        if debug: print(line)
+        if line.startswith('#') or line.startswith('\n'):
+            if debug: print(f"skipped line {line}")
+            continue
+
+        pair = line.split()
+        if debug: print(pair)
+        if len(pair) < 2:
+            if pair == []:
+                if debug: print("expect empty list: {pair}")
+                continue
+            raise ValueError(f"read_input: too few values in line - {pair}")
+        elif len(pair) > 2:
+            raise ValueError(f"read_inputs: too many values in line - {pair}")
+        
+        key = pair[0]
+        value = pair[1]
+
+        try:
+            input_parameters[key] = float(value)
+        except ValueError:
+            if value == "True":
+                input_parameters[key] = True
+            elif value == "False":
+                input_parameters[key] = False
+            else:
+                input_parameters[key] = value
+
+    for key in input_parameters.keys():
+        value = input_parameters[key]
+        if isinstance(value, str):
+            if value.endswith('{e}'):
+                if debug: print(value)
+                try:
+                    electronic_charge = input_parameters['e']
+                except KeyError:
+                    raise KeyError(f"Have not specified electronic charge in {filename}")
+                factor = float(value[:-3])
+                if debug:
+                    print(f'electronic charge = {electronic_charge}')
+                    print(f'factor = {factor}')
+
+                input_parameters[key] = factor * electronic_charge
+
+    if debug:
+        print(input_parameters)
+    return input_parameters
+
 
 
 def grid_generator(N):
@@ -198,23 +244,43 @@ def calculate_magnetisation(temperatures, J):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 2:
+        filename = sys.argv[2]
+    else:
+        filename = 'inputs.txt'
+
+    params = read_inputs(filename)
+
+    N = int(params['N'])
+    #T = params['T']
+    kB = params['kB']
+    #beta = 1 / (kB * T) # Thermodynamic beta.
+    e = params['e']
+    J = params['J']
+    Nit = int(params['Nit'])
+    oft = int(params['oft'])
+    HN = int(Nit / oft)
+    error = params['error']
+    
     temperatures = np.arange(100, 900, 50)
     #temperatures = [0.001, 0.01, 0.1, 1, 10, 30, 60, 80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 5000, 8000, 10000, 20000, 50000, 1.0e5]
     number_temperatures = len(temperatures)
-    print(f"temperatures = {temperatures}")
-    print(f"number of temperatures = {number_temperatures}")
+
+    if debug:
+        print(f"temperatures = {temperatures}")
+        print(f"number of temperatures = {number_temperatures}")
 
     J1 = J
     tic1 = time.process_time()
     magnetisation_1, magnetisation_1_error = calculate_magnetisation(temperatures, J1)
     toc1 = time.process_time()
-    print(f'Calculation 1 time is {toc1 - tic1} s')
+    if debug: print(f'Calculation 1 time is {toc1 - tic1} s')
 
     J2 = 2 * J
     tic2 = time.process_time()
     magnetisation_2, magnetisation_2_error = calculate_magnetisation(temperatures, J2)
     toc2 = time.process_time()
-    print(f'Calculation 2 time is {toc2 - tic2} s')
+    if debug: print(f'Calculation 2 time is {toc2 - tic2} s')
 
     fig, ax = plt.subplots()
     ax.errorbar(temperatures, np.abs(magnetisation_1), magnetisation_1_error, 0, 
@@ -231,13 +297,6 @@ if __name__ == "__main__":
     plt.savefig('Ising_model5.pdf')
 
     toc5 = time.process_time()
-    print(f'Total runtime is {toc5 - tic1} s.')
+    if debug: print(f'Total runtime is {toc5 - tic1} s.')
+
     plt.show()
-
-
-
-
-
-
-
-

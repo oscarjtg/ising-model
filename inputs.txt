@@ -1,0 +1,28 @@
+# Inputs for ising_model.py
+# Lines beginning with a '#' character are ignored.
+
+# Grid size.
+N		100
+
+# Temperature in Kelvin.
+T		100
+
+# Boltzmann constant in m^2 kg s^-2 K^-1.
+kB		1.381e-23
+#kB		1
+
+# Electronic charge.
+e		1.602e-19
+#e		1
+
+# Coupling constant in Joules (kg m^2 s^-2).
+J 		0.01{e}
+
+# Number of iterations.
+Nit		10000
+
+# How often to calculate Hamiltonian (total energy).
+oft 	5000
+
+# Plot error bars True/False.
+error	True
