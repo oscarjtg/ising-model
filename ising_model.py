@@ -177,7 +177,7 @@ def Metropolis_iteration(grid, i, j, J, beta, random_number):
             gridf = grid
             if debug3: print('initial', gridf[i, j]); print('final', gridf[i, j])
 
-    #print('------')
+    if debug2 or debug3: print('------')
     return gridf
 
 
