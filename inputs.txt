@@ -2,10 +2,10 @@
 # Lines beginning with a '#' character are ignored.
 
 # Grid size.
-N		100
+N		10
 
 # Temperature in Kelvin.
-T		100
+T		100:900:50
 
 # Boltzmann constant in m^2 kg s^-2 K^-1.
 kB		1.381e-23
@@ -19,7 +19,7 @@ e		1.602e-19
 J 		0.01{e}
 
 # Number of iterations.
-Nit		10000
+Nit		30000
 
 # How often to calculate Hamiltonian (total energy).
 oft 	5000

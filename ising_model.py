@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import time
 
 debug = True
+debug2 = False
+debug3 = False
 
 
 def read_inputs(filename):
@@ -54,21 +56,30 @@ def read_inputs(filename):
         value = input_parameters[key]
         if isinstance(value, str):
             if value.endswith('{e}'):
-                if debug: print(value)
-                try:
-                    electronic_charge = input_parameters['e']
-                except KeyError:
-                    raise KeyError(f"Have not specified electronic charge in {filename}")
-                factor = float(value[:-3])
-                if debug:
-                    print(f'electronic charge = {electronic_charge}')
-                    print(f'factor = {factor}')
-
-                input_parameters[key] = factor * electronic_charge
+                input_parameters[key] = multiply_by_e(value, input_parameters)
+            elif ':' in value:
+                start, end, interval = [float(x) for x in value.split(':')]
+                if debug: print(start, end, interval)
+                input_parameters[key] = np.arange(start, end, interval)
 
     if debug:
         print(input_parameters)
     return input_parameters
+
+
+
+def multiply_by_e(value, input_parameters):
+    if debug: print(value)
+    try:
+        electronic_charge = input_parameters['e']
+    except KeyError:
+        raise KeyError(f"Have not specified electronic charge in {filename}")
+    factor = float(value[:-3])
+    if debug:
+        print(f'electronic charge = {electronic_charge}')
+        print(f'factor = {factor}')
+
+    return factor * electronic_charge
 
 
 
@@ -82,7 +93,7 @@ def grid_generator(N):
 
     # Generate random numbers, uniform distribution in [0,1].
     random_numbers = np.random.uniform(size=N**2) 
-    #print(random_numbers) # Uncomment to print the random numbers.
+    if debug2: print(random_numbers)
     count = 0
 
     # This for loop randomly allocates +1 or -1 to a grid entry
@@ -95,8 +106,8 @@ def grid_generator(N):
                 grid[i, j] = -1
                 count -= 1
 
-    # print(grid)
-    # print('sum of elements in grid is ', c)
+    if debug2: print(grid)
+    if debug2: print('sum of elements in grid is ', c)
     return grid
 
 
@@ -134,36 +145,37 @@ def full_interaction_energy(grid, N=10, J=1):
     return H
 
 
-def Metropolis_iteration(grid, i, j, J, B, ur):
-    #print('before', grid[i,j])
+def Metropolis_iteration(grid, i, j, J, beta, random_number):
     Ei = nearest_neighbour_interaction(grid, i, j, N, J)
-    #print('Ei = ', Ei)
+    if debug2: print('before', grid[i,j]); print('Ei = ', Ei)
+    
     grid[i, j] = -1.0 * grid[i, j]
-    #print('after', grid[i, j])
     Ef = nearest_neighbour_interaction(grid, i, j, N, J)
-    #print('Ef = ', Ef)
     dE = Ef - Ei
-    #print('dE = ', dE)
+    if debug2: 
+        print('after', grid[i, j])
+        print('Ef = ', Ef)
+        print('dE = ', dE)
+    
     if dE < 0: # Flipping spin leads to reduction in energy, i.e. is favourable
-        #print('dE<0, remain flipped')
+        if debug3: print('dE<0, remain flipped')
         gridf = grid
-        #print(gridf[i, j])
-        #print('final', gridf[i, j])
+        if debug3: print('initial', gridf[i, j]); print('final', gridf[i, j])
     else:
-        #ur = np.random.uniform(1)
-        B_factor = np.exp(-B * dE)
-        #print('beta =',B)
-        #print('B-factor=',B_factor)
-        #print('random number is',ur)
-        if B_factor > ur:
-            #print('dE>0 but remains flipped')
+        B_factor = np.exp(-beta * dE)
+        if debug3:
+            print('beta =', beta)
+            print('B-factor=', B_factor)
+            print('random number is', random_number)
+        if B_factor > random_number:
+            if debug3: print('dE>0 but remains flipped')
             gridf = grid
-            #print('final',gridf[i,j])
+            if debug3: print('initial', gridf[i, j]); print('final', gridf[i, j])
         else:
-            #print('dE > 0, flip back')
+            if debug3: print('dE > 0, flip back')
             grid[i, j] = -1.0*grid[i, j]
             gridf = grid
-            #print('final', gridf[i, j])
+            if debug3: print('initial', gridf[i, j]); print('final', gridf[i, j])
 
     #print('------')
     return gridf
@@ -252,9 +264,9 @@ if __name__ == "__main__":
     params = read_inputs(filename)
 
     N = int(params['N'])
-    #T = params['T']
+    T = params['T']
     kB = params['kB']
-    #beta = 1 / (kB * T) # Thermodynamic beta.
+    beta = 1 / (kB * T) # Thermodynamic beta.
     e = params['e']
     J = params['J']
     Nit = int(params['Nit'])
