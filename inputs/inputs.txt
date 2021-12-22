@@ -16,10 +16,10 @@ e		1.602e-19
 #e		1
 
 # Coupling constant in Joules (kg m^2 s^-2).
-J 		0.01{e}
+J 		0.01{e}  0.02{e} 0.03{e}
 
 # Number of iterations.
-Nit		20000
+Nit		30000
 
 # How often to calculate Hamiltonian (total energy).
 oft 	1000
