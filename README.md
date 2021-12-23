@@ -10,7 +10,11 @@ The ferromagnet-to-paramagnet phase transition is observed at a higher temperatu
 To run the code, first check `inputs.txt` in the inputs directory and modify the parameter values as desired. 
 A description of the parameters is found in the README.md file in the inputs directory.
 
-Then navigate back to the ising-model directory and input ```python main.py <input-file-path>``` at the command line, where `<input-file-path>` is an optional command-line argument that gives the path to the file containing input parameters relative to the current working directory.
+Then navigate back to the ising-model directory and input 
+```
+python main.py <input-file-path>
+``` 
+at the command line, where `<input-file-path>` is an optional command-line argument that gives the path to the file containing input parameters relative to the current working directory.
 The computation will proceed, and a plot will pop out as a separate file. This is automatically saved into 
 the output directory as a PDF and as a PNG (`ising_model.pdf` and `ising_model.png`).
 
