@@ -41,13 +41,14 @@ class Simulation:
         self.J = J
 
     def magnetisation_calculation(self):
-        mag, err = comps.calculate_magnetisation(self)
+        mag, err = comps.run_calculations(self)
         self.magnetisation = mag
         self.magnetisation_error = err
 
 
 if __name__ == "__main__":
-    tic_full = time.process_time()
+    
+    # Process any command-line arguments.
     if debug2: print(sys.argv)
     if len(sys.argv) > 1:
         filename = sys.argv[1]
@@ -56,7 +57,10 @@ if __name__ == "__main__":
         filename = 'inputs/inputs.txt'
     if debug: print(filename)
 
+    # Read the input file and extract parameters into a dict called "params".
     params = inputs.util.read_inputs(filename, debug=True)
+    
+    # Process the coupling constant input(s) into a Python list.
     J = params['J']
     if isinstance(J, str):
         J_list = list(float(J))
@@ -64,8 +68,9 @@ if __name__ == "__main__":
         J_list = J
     else:
         raise ValueError(f'J from params is neither a str nor list: it is {J}.')
-
     if debug: print(J_list)
+    
+    # Carry out simulation for each J in the input file, timing each calculation.
     results = {}
     for J in J_list:
         num = J_list.index(J) + 1
@@ -76,6 +81,7 @@ if __name__ == "__main__":
         toc = time.process_time()
         if debug: print(f'Calculation {num} time is {toc - tic} s')
     
+    # Generate one plot of magnetisation vs temperature, with different points of each J.
     plots.magnetisation_temperature(results, debug)
 
     

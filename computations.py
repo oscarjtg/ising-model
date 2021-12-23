@@ -70,6 +70,7 @@ def full_interaction_energy(grid, N=10, J=1):
 
 
 def metropolis_iteration(grid, i, j, N, J, beta, random_number):
+    """ Carries out steps 2-5 of Metropolis algorithm described in README. """
     Ei = nearest_neighbour_interaction(grid, i, j, N, J)
     if debug2: print('before', grid[i,j]); print('Ei = ', Ei)
     
@@ -106,6 +107,10 @@ def metropolis_iteration(grid, i, j, N, J, beta, random_number):
 
 
 def metropolis(sim, grid1, beta, progplot):
+    """ 
+    Generates random numbers to select lattice site locations and calls
+    metropolis_iteration function.
+    """
     N = sim.N
     Nit = sim.Nit
     J = sim.J
@@ -170,13 +175,24 @@ def metropolis(sim, grid1, beta, progplot):
     return Mag, Mag_dev
 
 
-def calculate_magnetisation(sim):
+def run_calculations(sim):
+    """
+    Reads Simulation class object "sim".
+    For each temperature in sim.temperatures:
+    (1) Calculates beta factor (1/kB T) at the temperature
+    (2) Calls grid_generator(N) to generate NxN 2D lattice of randomly-distributed up and down spins.
+    (3) Calls metropolis() to carry out the Metropolis algorithm, returning magnetisation and uncertainty
+    after sim.Nit iteration steps.
+    
+    Returns arrays of magnetisation and magnetisation uncertainty (arbitrary units) 
+    containing the simulation results at each temperature.
+    """
     number_temperatures = len(sim.temperatures)
     magnetisation = np.linspace(0, 0, number_temperatures)
     magnetisation_error = np.linspace(0, 0, number_temperatures)
     for temperature in sim.temperatures:
-        grid = grid_generator(sim.N)
         beta = 1/(sim.kB * temperature)
+        grid = grid_generator(sim.N)
         n = np.where(sim.temperatures == temperature)
         magnetisation[n], magnetisation_error[n] = metropolis(sim, grid, beta, False)
 
